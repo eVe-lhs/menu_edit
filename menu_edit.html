@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Data Management</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <h1>Menu Data Management</h1>
+
+    <div class="button-group">
+      <button id="createNewBtn">Save and Download Zip</button>
+      <button id="editBtn" class="secondary">Upload Zip</button>
+      <input type="file" id="fileInput" accept=".zip" style="display: none" />
+      <button id="exportPptBtn" class="secondary">Download PPT</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="categories">Categories</div>
+      <div class="tab" data-tab="items">Items</div>
+      <div class="tab" data-tab="tables">Tables</div>
+    </div>
+
+    <div id="categoriesTab" class="tab-content active">
+      <button id="addCategoryBtn">Add Category</button>
+      <table id="categoriesTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Japanese Name</th>
+            <th>Myanmar Name</th>
+            <th>Chinese Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="categoriesTableBody"></tbody>
+      </table>
+      <div id="categoriesEmpty" class="empty-state">No categories yet.</div>
+    </div>
+
+    <div id="itemsTab" class="tab-content">
+      <button id="addItemBtn">Add Item</button>
+      <button id="addOptionBtn" class="secondary">Add Option</button>
+      <table id="itemsTable">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Japanese Name</th>
+            <th>Myanmar Name</th>
+            <th>Chinese Name</th>
+            <th>Category</th>
+            <th>Restaurant</th>
+            <th>Price</th>
+            <th>Image</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="itemsTableBody"></tbody>
+      </table>
+      <div id="itemsEmpty" class="empty-state">No items yet.</div>
+    </div>
+
+    <div id="tablesTab" class="tab-content">
+      <button id="addTableBtn">Add Table</button>
+      <table id="tablesTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Table Number</th>
+            <th>Table Type</th>
+            <th>Sub Restaurant</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tablesTableBody"></tbody>
+      </table>
+      <div id="tablesEmpty" class="empty-state">No tables yet.</div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="categoryFormTitle">Add New Category</h2>
+      <div class="form-group">
+        <label for="categoryName">Name:</label>
+        <input type="text" id="categoryName" required />
+      </div>
+      <div class="form-group">
+        <label for="categoryJpName">Japanese Name:</label>
+        <input type="text" id="categoryJpName" required />
+      </div>
+      <div class="form-group">
+        <label for="categoryMmName">Myanmar Name:</label>
+        <input type="text" id="categoryMmName" />
+      </div>
+      <div class="form-group">
+        <label for="categoryCnName">Chinese Name:</label>
+        <input type="text" id="categoryCnName" />
+      </div>
+      <div class="form-actions">
+        <button id="cancelCategoryBtn">Cancel</button>
+        <button id="saveCategoryBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="itemFormTitle">Add New Item</h2>
+      <div class="form-group">
+        <label for="itemCode">Code:</label>
+        <input type="text" id="itemCode" required maxlength="6" autocomplete="off" />
+      </div>
+
+      <div id="itemNameField" class="form-group">
+        <label for="itemName">Name:</label>
+        <input type="text" id="itemName" required />
+      </div>
+      <div id="itemJpNameField" class="form-group">
+        <label for="itemJpName">Japanese Name:</label>
+        <input type="text" id="itemJpName" required />
+      </div>
+      <div id="itemMmNameField" class="form-group">
+        <label for="itemMmName">Myanmar Name:</label>
+        <input type="text" id="itemMmName" />
+      </div>
+      <div id="itemCnNameField" class="form-group">
+        <label for="itemCnName">Chinese Name:</label>
+        <input type="text" id="itemCnName" />
+      </div>
+
+      <div id="optionFields" style="display: none;">
+        <div class="form-group">
+          <label>Base Item Code:</label>
+          <select id="itemCodeSelect" required></select>
+        </div>
+        <div class="form-group">
+          <label>Name (Base):</label>
+          <input type="text" id="baseItemName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Japanese Name (Base):</label>
+          .
+          <input type="text" id="baseItemJpName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Myanmar Name (Base):</label>
+          <input type="text" id="baseItemMmName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Chinese Name (Base):</label>
+          <input type="text" id="baseItemCnName" readonly>
+        </div>
+        <div class="form-group">
+          <label for="itemNameOption">Name Option (e.g., "Spicy"):</label>
+          <input type="text" id="itemNameOption" placeholder="Enter option" />
+        </div>
+        <div class="form-group">
+          <label for="itemJpNameOption">Japanese Name Option:</label>
+          <input type="text" id="itemJpNameOption" placeholder="Enter Japanese option" />
+        </div>
+        <div class="form-group">
+          <label for="itemMmNameOption">Myanmar Name Option:</label>
+          <input type="text" id="itemMmNameOption" placeholder="Enter Myanmar option" />
+        </div>
+        <div class="form-group">
+          <label for="itemCnNameOption">Chinese Name Option:</label>
+          <input type="text" id="itemCnNameOption" placeholder="Enter Chinese option" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="itemCategory">Category:</label>
+        <select id="itemCategory" required></select>
+      </div>
+
+      <div class="form-group">
+        <label for="itemFoodStatus">Food Status:</label>
+        <select id="itemFoodStatus" required>
+          <option value="Available">Available</option>
+          <option value="Unavailable">Unavailable</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="itemRestaurantSection">Restaurant Section:</label>
+        <select id="itemRestaurantSection" required>
+          <option value="NongInlay">NongInlay</option>
+          <option value="TaungGyi">TaungGyi</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="itemPrice">Price (¥):</label>
+        <input type="number" id="itemPrice" step="1" required />
+      </div>
+      <div class="form-group">
+        <label for="itemTax">Tax (%):</label>
+        <input type="number" id="itemTax" step="1" value="5" required />
+      </div>
+      <div class="form-group" id="itemImageGroup">
+        <label>Image (900x900px):</label>
+        <input type="file" id="itemImage" accept=".jpg,.jpeg,.png,.gif" />
+        <img id="itemImagePreview" class="image-preview" src="" alt="Image preview" />
+      </div>
+      <div class="form-actions">
+        <button id="cancelItemBtn">Cancel</button>
+        <button id="saveItemBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tableModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="tableFormTitle">Add New Table</h2>
+      <div class="form-group">
+        <label for="tableNumber">Table Number:</label>
+        <input type="text" id="tableNumber" required />
+      </div>
+      <div class="form-group">
+        <label for="tableType">Table Type:</label>
+        <select id="tableType" required>
+          <option value="Table">Table</option>
+          <option value="Room">Room</option>
+          <option value="Take Out">Take Out</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tableRestaurant">Sub Restaurant:</label>
+        <select id="tableRestaurant" required>
+          <option value="NongInlay">NongInlay</option>
+          <option value="TaungGyi">TaungGyi</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button id="cancelTableBtn">Cancel</button>
+        <button id="saveTableBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Generating PPT, please wait...</p>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
