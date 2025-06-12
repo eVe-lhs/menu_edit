@@ -434,8 +434,8 @@ export async function exportToPpt(options) {
                 x: imageX,
                 y: y,
                 w: 2.0,
-                h: 2.0,
-                rounding: true,
+                  h: 2.0,
+                  rounding: true
               });
             }
           }
