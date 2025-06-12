@@ -249,6 +249,26 @@
     </div>
   </div>
 
+  <div id="pptOptionsModal" class="modal">
+    <div class="modal-content wide">
+      <span class="close">&times;</span>
+      <h2>PPT Export Options</h2>
+      <div class="form-group">
+        <label for="restaurantName">Restaurant Name:</label>
+        <input type="text" id="restaurantName" placeholder="e.g., The Gourmet Place" maxlength="50" />
+      </div>
+      <hr>
+      <h3>Category Styles</h3>
+      <div id="categoryStylesContainer">
+      </div>
+      <div class="form-actions">
+        <button id="cancelPptOptionsBtn">Cancel</button>
+        <button id="generatePptBtn">Generate and Download</button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner"></div>
     <p>Generating PPT, please wait...</p>

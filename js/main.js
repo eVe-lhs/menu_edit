@@ -16,7 +16,7 @@ import {
   validateImage,
 } from "./modals.js";
 import { exportToPdf } from "./pdf-export.js";
-import { exportToPpt } from "./ppt-export.js";
+import { exportToPpt, showPptOptionsModal } from "./ppt-export.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Subscribe all rendering functions to state changes
@@ -51,7 +51,7 @@ function setupEventListeners() {
   createNewBtn.addEventListener("click", exportToZip);
   editBtn.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", importFromZip);
-  exportPptBtn.addEventListener("click", exportToPpt);
+  exportPptBtn.addEventListener("click", showPptOptionsModal);
   // exportPdfBtn.addEventListener("click", exportToPdf);
 
   // Tab switching

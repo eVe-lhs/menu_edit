@@ -1,5 +1,17 @@
 import { appState } from "./core.js";
 
+// --- Color palettes for categories ---
+const defaultColorPalettes = [
+  { bkgd: "FFFFFF", font: "363636" }, // Default White
+  { bkgd: "F1F8E9", font: "558B2F" }, // Light Green
+  { bkgd: "E3F2FD", font: "1565C0" }, // Light Blue
+  { bkgd: "FFFDE7", font: "F9A825" }, // Light Yellow
+  { bkgd: "FBE9E7", font: "D84315" }, // Light Orange
+  { bkgd: "EFEBE9", font: "4E342E" }, // Light Brown
+  { bkgd: "F3E5F5", font: "6A1B9A" }, // Light Purple
+  { bkgd: "E0F2F1", font: "00695C" }, // Light Teal
+];
+
 // Helper function to convert blob to base64
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -62,25 +74,91 @@ const naturalSortComparator = (a, b) => {
   return a.Code.localeCompare(b.Code);
 };
 
-export async function exportToPpt() {
+function hidePptOptionsModal() {
+  document.getElementById("pptOptionsModal").style.display = "none";
+}
+
+export function showPptOptionsModal() {
+  const container = document.getElementById("categoryStylesContainer");
+  container.innerHTML = ""; // Clear previous content
+
+  appState.categories.forEach((category, index) => {
+    const palette = defaultColorPalettes[index % defaultColorPalettes.length];
+    const item = document.createElement("div");
+    item.className = "category-style-item";
+    item.innerHTML = `
+      <h4>${category.name}</h4>
+      <div class="color-picker-group">
+        <div>
+          <label for="bkgd-color-${index}">Background</label>
+          <input type="color" id="bkgd-color-${index}" value="#${palette.bkgd}">
+        </div>
+        <div>
+          <label for="font-color-${index}">Font</label>
+          <input type="color" id="font-color-${index}" value="#${palette.font}">
+        </div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+
+  document.getElementById("pptOptionsModal").style.display = "block";
+
+  document.getElementById("generatePptBtn").onclick = () => {
+    const restaurantName = document.getElementById("restaurantName").value;
+    const categoryStyles = {};
+    appState.categories.forEach((category, index) => {
+      categoryStyles[category.name] = {
+        bkgd: document
+          .getElementById(`bkgd-color-${index}`)
+          .value.replace("#", ""),
+        font: document
+          .getElementById(`font-color-${index}`)
+          .value.replace("#", ""),
+      };
+    });
+    hidePptOptionsModal();
+    exportToPpt({ restaurantName, categoryStyles });
+  };
+
+  document.getElementById("cancelPptOptionsBtn").onclick = hidePptOptionsModal;
+  document.querySelector("#pptOptionsModal .close").onclick =
+    hidePptOptionsModal;
+}
+
+export async function exportToPpt(options) {
+  const { restaurantName, categoryStyles } = options;
   const loadingOverlay = document.getElementById("loadingOverlay");
   loadingOverlay.style.display = "flex";
 
   const pptx = new PptxGenJS();
-  pptx.defineLayout({ name: "A4_PORTRAIT_CUSTOM", width: 8.27, height: 11.69 });
+  const PAGE_WIDTH = 8.27;
+  const PAGE_HEIGHT = 11.69;
+  pptx.defineLayout({
+    name: "A4_PORTRAIT_CUSTOM",
+    width: PAGE_WIDTH,
+    height: PAGE_HEIGHT,
+  });
   pptx.layout = "A4_PORTRAIT_CUSTOM";
 
-  // --- NEW: Color palettes for categories ---
-  const colorPalettes = [
-    { bkgd: "FFFFFF", font: "363636", line: "C7C7C7" }, // Default White
-    { bkgd: "F1F8E9", font: "558B2F", line: "A5D6A7" }, // Light Green
-    { bkgd: "E3F2FD", font: "1565C0", line: "90CAF9" }, // Light Blue
-    { bkgd: "FFFDE7", font: "F9A825", line: "FFE082" }, // Light Yellow
-    { bkgd: "FBE9E7", font: "D84315", line: "FFAB91" }, // Light Orange
-    { bkgd: "EFEBE9", font: "4E342E", line: "BCAAA4" }, // Light Brown
-    { bkgd: "F3E5F5", font: "6A1B9A", line: "CE93D8" }, // Light Purple
-    { bkgd: "E0F2F1", font: "00695C", line: "80CBC4" }, // Light Teal
-  ];
+  const addRandomShapes = (slide, count, color) => {
+    const shapes = [
+      pptx.shapes.OVAL,
+      pptx.shapes.STAR_5_POINT,
+      pptx.shapes.ISOSCELES_TRIANGLE,
+    ];
+    for (let i = 0; i < count; i++) {
+      const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
+      slide.addShape(shapeType, {
+        x: Math.random() * (PAGE_WIDTH - 0.5),
+        y: Math.random() * (PAGE_HEIGHT - 0.5),
+        w: Math.random() * 0.3 + 0.15,
+        h: Math.random() * 0.3 + 0.15,
+        fill: { color: color, alpha: 85 },
+        rotate: Math.random() * 360,
+      });
+    }
+  };
 
   setTimeout(async () => {
     try {
@@ -97,63 +175,86 @@ export async function exportToPpt() {
       }
 
       const categoryNames = Object.keys(itemsByCategory);
-      for (const [categoryIndex, categoryName] of categoryNames.entries()) {
+      for (const categoryName of categoryNames) {
         const category = appState.categories.find(
           (c) => c.name === categoryName
         );
-        if (!category) continue;
 
-        // Assign colors for the current category
-        const palette = colorPalettes[categoryIndex % colorPalettes.length];
-        const bkgdColor = palette.bkgd;
-        const fontColor = palette.font;
-        const lineColor = palette.line;
+        if (!category) {
+          console.warn(
+            `Skipping items for non-existent category: ${categoryName}`
+          );
+          continue;
+        }
 
-        let slide = pptx.addSlide({ bkgd: bkgdColor });
+        const style = categoryStyles[categoryName] || defaultColorPalettes[0];
+        const bkgdColor = style.bkgd;
+        const fontColor = style.font;
 
-        const addCategoryHeader = (currentSlide) => {
-          currentSlide.addText(category.name, {
-            x: 0.5,
-            y: 0.25,
-            w: 3.6,
-            h: 0.4,
-            color: fontColor,
-            fontSize: 24,
-            bold: true,
-            fontFace: "Noto Sans",
+        const createNewSlide = () => {
+          const newSlide = pptx.addSlide();
+          newSlide.addShape(pptx.shapes.RECTANGLE, {
+            x: 0,
+            y: 0,
+            w: "100%",
+            h: "100%",
+            fill: { color: bkgdColor },
+          });
+          addRandomShapes(newSlide, 10, fontColor);
+          return newSlide;
+        };
+
+        const addHeaderToSlide = (currentSlide) => {
+          // NEW: High-contrast restaurant name banner
+          if (restaurantName) {
+            currentSlide.addShape(pptx.shapes.RECTANGLE, {
+              x: 0,
+              y: 0,
+              w: "100%",
+              h: 0.5,
+              fill: { color: "#800000" }, // Solid banner with font color
+            });
+            currentSlide.addText(restaurantName, {
+              x: 0,
+              y: 0,
+              w: "100%",
+              h: 0.5,
+              align: "center",
+              valign: "middle", // Vertical alignment
+              color: bkgdColor, // Contrasting text color
+              fontSize: 20,
+              bold: true,
+              fontFace: "Noto Sans",
+            });
+          }
+
+          const catWidth = 5.5;
+          const catX = (PAGE_WIDTH - catWidth) / 2;
+          const catY = restaurantName ? 0.7 : 0.2; // Position below banner if it exists
+          currentSlide.addShape(pptx.shapes.RECTANGLE, {
+            x: catX,
+            y: catY,
+            w: catWidth,
+            h: 0.6,
+            fill: { color: fontColor },
           });
           currentSlide.addText(category.japan_name, {
-            x: 0.5,
-            y: 0.65,
-            w: 3.6,
-            h: 0.4,
-            color: fontColor,
-            fontSize: 18,
+            x: catX,
+            y: catY,
+            w: catWidth,
+            h: 0.6,
+            align: "center",
+            valign: "middle",
+            color: bkgdColor,
+            fontSize: 28,
+            bold: true,
             fontFace: "Noto Sans JP",
-          });
-          currentSlide.addText(category.myanmar_name, {
-            x: 4.25,
-            y: 0.25,
-            w: 3.6,
-            h: 0.4,
-            color: fontColor,
-            fontSize: 18,
-            fontFace: "Noto Sans Myanmar",
-            align: "right",
-          });
-          currentSlide.addText(category.chinese_name, {
-            x: 4.25,
-            y: 0.65,
-            w: 3.6,
-            h: 0.4,
-            color: fontColor,
-            fontSize: 18,
-            fontFace: "Noto Sans SC",
-            align: "right",
           });
         };
 
-        addCategoryHeader(slide);
+        let slide = createNewSlide();
+        addHeaderToSlide(slide);
+        // Adjust starting Y position for items to be below the header
         let y = 1.5;
 
         for (const [index, item] of itemsByCategory[categoryName].entries()) {
@@ -161,9 +262,9 @@ export async function exportToPpt() {
           if (item.isGroup) {
             neededHeight = 1.6 + item.options.length * 0.4;
           }
-          if (y + neededHeight > 11.5) {
-            slide = pptx.addSlide({ bkgd: bkgdColor });
-            addCategoryHeader(slide);
+          if (y + neededHeight > 11) {
+            slide = createNewSlide();
+            addHeaderToSlide(slide);
             y = 1.5;
           }
 
@@ -272,6 +373,7 @@ export async function exportToPpt() {
                 y: y,
                 w: 2.0,
                 h: 2.0,
+                rounding: true, // Rounded corners (PptxGenJS v3.10.0+)
               });
             }
           } else {
@@ -314,7 +416,7 @@ export async function exportToPpt() {
             });
             slide.addText(`¥${item.Price_Included_Tax}`, {
               x: textX,
-              y: y + 1.4,
+              y: y + 1.5,
               w: 5.0,
               h: 0.3,
               fontSize: 14,
@@ -333,22 +435,25 @@ export async function exportToPpt() {
                 y: y,
                 w: 2.0,
                 h: 2.0,
+                rounding: true,
               });
             }
           }
+
+          const dividerY = y + neededHeight + 0.3;
           slide.addShape(pptx.shapes.LINE, {
             x: 0.5,
-            y: y + neededHeight - 0.2,
+            y: dividerY,
             w: 7.27,
             h: 0,
-            line: { color: lineColor, width: 1 },
+            line: { color: fontColor, width: 0.5, dashType: "dash" },
           });
-          y += neededHeight;
+          y = dividerY + 0.2;
         }
       }
 
-      pptx.writeFile({ fileName: "menu_final_themed.pptx" });
-      alert("Themed PPT generation complete!");
+      pptx.writeFile({ fileName: "custom_menu.pptx" });
+      alert("Custom PPT generation complete!");
     } catch (error) {
       console.error("Error generating PPT:", error);
       alert(
