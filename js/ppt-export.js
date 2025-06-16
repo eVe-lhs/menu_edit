@@ -1,5 +1,5 @@
 import { appState } from "./core.js";
-import { roundImageCorners } from "./utils.js";
+import { processImageForPpt } from "./utils.js";
 // At the top of js/ppt-export.js
 
 // --- Color palettes for categories ---
@@ -368,20 +368,17 @@ export async function exportToPpt(options) {
               const originalImageDataUrl = await blobToBase64(
                 appState.images[item.image]
               );
-              // Create a new image with rounded corners. The second parameter is the corner radius.
-              // This radius is based on the original image dimensions, so you may need to adjust it.
-              const roundedImageDataUrl = await roundImageCorners(
-                originalImageDataUrl,
-                150
+              // Process the image: resize to 900x900, add shadow, and round corners
+              const processedImageDataUrl = await processImageForPpt(
+                originalImageDataUrl
               );
 
               slide.addImage({
-                data: roundedImageDataUrl,
+                data: processedImageDataUrl,
                 x: imageX,
                 y: y,
                 w: 2.0,
                 h: 2.0,
-                // No rounding property needed here anymore
               });
             }
           } else {
@@ -438,14 +435,13 @@ export async function exportToPpt(options) {
               const originalImageDataUrl = await blobToBase64(
                 appState.images[item.Image]
               );
-              // Create a new image with rounded corners.
-              const roundedImageDataUrl = await roundImageCorners(
-                originalImageDataUrl,
-                150
+              // Process the image: resize to 900x900, add shadow, and round corners
+              const processedImageDataUrl = await processImageForPpt(
+                originalImageDataUrl
               );
 
               slide.addImage({
-                data: roundedImageDataUrl,
+                data: processedImageDataUrl,
                 x: imageX,
                 y: y,
                 w: 2.0,
