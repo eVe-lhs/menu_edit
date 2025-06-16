@@ -1,4 +1,6 @@
 import { appState } from "./core.js";
+// At the top of js/ppt-export.js
+import { removeImageBackground } from "./utils.js";
 
 // --- Color palettes for categories ---
 const defaultColorPalettes = [
@@ -127,190 +129,189 @@ export function showPptOptionsModal() {
 }
 
 export async function exportToPpt(options) {
-  const { restaurantName, categoryStyles } = options;
-  const loadingOverlay = document.getElementById("loadingOverlay");
-  loadingOverlay.style.display = "flex";
+    const { restaurantName, categoryStyles } = options;
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    loadingOverlay.style.display = "flex";
 
-  const pptx = new PptxGenJS();
-  const PAGE_WIDTH = 8.27;
-  const PAGE_HEIGHT = 11.69;
-  pptx.defineLayout({
-    name: "A4_PORTRAIT_CUSTOM",
-    width: PAGE_WIDTH,
-    height: PAGE_HEIGHT,
-  });
-  pptx.layout = "A4_PORTRAIT_CUSTOM";
+    const pptx = new PptxGenJS();
+    const PAGE_WIDTH = 8.27;
+    const PAGE_HEIGHT = 11.69;
+    pptx.defineLayout({
+        name: "A4_PORTRAIT_CUSTOM",
+        width: PAGE_WIDTH,
+        height: PAGE_HEIGHT,
+    });
+    pptx.layout = "A4_PORTRAIT_CUSTOM";
 
-  const addRandomShapes = (slide, count, color) => {
-    const shapes = [
-      pptx.shapes.OVAL,
-      pptx.shapes.STAR_5_POINT,
-      pptx.shapes.ISOSCELES_TRIANGLE,
-    ];
-    for (let i = 0; i < count; i++) {
-      const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
-      slide.addShape(shapeType, {
-        x: Math.random() * (PAGE_WIDTH - 0.5),
-        y: Math.random() * (PAGE_HEIGHT - 0.5),
-        w: Math.random() * 0.3 + 0.15,
-        h: Math.random() * 0.3 + 0.15,
-        fill: { color: color, alpha: 85 },
-        rotate: Math.random() * 360,
-      });
-    }
-  };
-
-  setTimeout(async () => {
-    try {
-      const processedItems = groupOptionItemsByCode(appState.items);
-      const itemsByCategory = processedItems.reduce((acc, item) => {
-        const categoryName = item.Category;
-        if (!acc[categoryName]) acc[categoryName] = [];
-        acc[categoryName].push(item);
-        return acc;
-      }, {});
-
-      for (const category in itemsByCategory) {
-        itemsByCategory[category].sort(naturalSortComparator);
-      }
-
-      const categoryNames = Object.keys(itemsByCategory);
-      for (const categoryName of categoryNames) {
-        const category = appState.categories.find(
-          (c) => c.name === categoryName
-        );
-
-        if (!category) {
-          console.warn(
-            `Skipping items for non-existent category: ${categoryName}`
-          );
-          continue;
-        }
-
-        const style = categoryStyles[categoryName] || defaultColorPalettes[0];
-        const bkgdColor = style.bkgd;
-        const fontColor = style.font;
-
-        const createNewSlide = () => {
-          const newSlide = pptx.addSlide();
-          newSlide.addShape(pptx.shapes.RECTANGLE, {
-            x: 0,
-            y: 0,
-            w: "100%",
-            h: "100%",
-            fill: { color: bkgdColor },
-          });
-          addRandomShapes(newSlide, 10, fontColor);
-          return newSlide;
-        };
-
-        const addHeaderToSlide = (currentSlide) => {
-          // NEW: High-contrast restaurant name banner
-          if (restaurantName) {
-            currentSlide.addShape(pptx.shapes.RECTANGLE, {
-              x: 0,
-              y: 0,
-              w: "100%",
-              h: 0.5,
-              fill: { color: "#800000" }, // Solid banner with font color
+    const addRandomShapes = (slide, count, color) => {
+        const shapes = [
+            pptx.shapes.OVAL,
+            pptx.shapes.STAR_5_POINT,
+            pptx.shapes.ISOSCELES_TRIANGLE,
+        ];
+        for (let i = 0; i < count; i++) {
+            const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
+            slide.addShape(shapeType, {
+                x: Math.random() * (PAGE_WIDTH - 0.5),
+                y: Math.random() * (PAGE_HEIGHT - 0.5),
+                w: Math.random() * 0.3 + 0.15,
+                h: Math.random() * 0.3 + 0.15,
+                fill: { color: color, alpha: 85 },
+                rotate: Math.random() * 360,
             });
-            currentSlide.addText(restaurantName, {
-              x: 0,
-              y: 0,
-              w: "100%",
-              h: 0.5,
-              align: "center",
+        }
+    };
+
+    setTimeout(async () => {
+        try {
+            const processedItems = groupOptionItemsByCode(appState.items);
+            const itemsByCategory = processedItems.reduce((acc, item) => {
+                const categoryName = item.Category;
+                if (!acc[categoryName]) acc[categoryName] = [];
+                acc[categoryName].push(item);
+                return acc;
+            }, {});
+
+            for (const category in itemsByCategory) {
+                itemsByCategory[category].sort(naturalSortComparator);
+            }
+
+            const categoryNames = Object.keys(itemsByCategory);
+            for (const categoryName of categoryNames) {
+                const category = appState.categories.find(
+                    (c) => c.name === categoryName
+                );
+
+                if (!category) {
+                    console.warn(
+                        `Skipping items for non-existent category: ${categoryName}`
+                    );
+                    continue;
+                }
+
+                const style = categoryStyles[categoryName] || defaultColorPalettes[0];
+                const bkgdColor = style.bkgd;
+                const fontColor = style.font;
+
+                const createNewSlide = () => {
+                    const newSlide = pptx.addSlide();
+                    newSlide.addShape(pptx.shapes.RECTANGLE, {
+                        x: 0,
+                        y: 0,
+                        w: "100%",
+                        h: "100%",
+                        fill: { color: bkgdColor },
+                    });
+                    addRandomShapes(newSlide, 10, fontColor);
+                    return newSlide;
+                };
+
+                const addHeaderToSlide = (currentSlide) => {
+          // NEW: High-contrast restaurant name banner
+                    if (restaurantName) {
+                        currentSlide.addShape(pptx.shapes.RECTANGLE, {
+                            x: 0,
+                            y: 0,
+                            w: "100%",
+                            h: 0.5,
+              fill: { color: "#800000" }, // Solid banner with font color
+                        });
+                        currentSlide.addText(restaurantName, {
+                            x: 0,
+                            y: 0,
+                            w: "100%",
+                            h: 0.5,
+                            align: "center",
               valign: "middle", // Vertical alignment
               color: bkgdColor, // Contrasting text color
-              fontSize: 20,
-              bold: true,
-              fontFace: "Noto Sans",
-            });
-          }
+                            fontSize: 20,
+                            bold: true,
+                            fontFace: "Noto Sans",
+                        });
+                    }
 
-          const catWidth = 5.5;
-          const catX = (PAGE_WIDTH - catWidth) / 2;
+                    const catWidth = 5.5;
+                    const catX = (PAGE_WIDTH - catWidth) / 2;
           const catY = restaurantName ? 0.7 : 0.2; // Position below banner if it exists
-          currentSlide.addShape(pptx.shapes.RECTANGLE, {
-            x: catX,
-            y: catY,
-            w: catWidth,
-            h: 0.6,
-            fill: { color: fontColor },
-          });
-          currentSlide.addText(category.japan_name, {
-            x: catX,
-            y: catY,
-            w: catWidth,
-            h: 0.6,
-            align: "center",
-            valign: "middle",
-            color: bkgdColor,
-            fontSize: 28,
-            bold: true,
-            fontFace: "Noto Sans JP",
-          });
-        };
+                    currentSlide.addShape(pptx.shapes.RECTANGLE, {
+                        x: catX,
+                        y: catY,
+                        w: catWidth,
+                        h: 0.6,
+                        fill: { color: fontColor },
+                    });
+                    currentSlide.addText(category.japan_name, {
+                        x: catX,
+                        y: catY,
+                        w: catWidth,
+                        h: 0.6,
+                        align: "center",
+                        valign: "middle",
+                        color: bkgdColor,
+                        fontSize: 28,
+                        bold: true,
+                        fontFace: "Noto Sans JP",
+                    });
+                };
 
-        let slide = createNewSlide();
-        addHeaderToSlide(slide);
-        // Adjust starting Y position for items to be below the header
-        let y = 1.5;
+                let slide = createNewSlide();
+                addHeaderToSlide(slide);
+                let y = 1.5;
 
-        for (const [index, item] of itemsByCategory[categoryName].entries()) {
-          let neededHeight = 2.2;
-          if (item.isGroup) {
-            neededHeight = 1.6 + item.options.length * 0.4;
-          }
-          if (y + neededHeight > 11) {
-            slide = createNewSlide();
-            addHeaderToSlide(slide);
-            y = 1.5;
-          }
+                for (const [index, item] of itemsByCategory[categoryName].entries()) {
+                    let neededHeight = 2.2;
+                    if (item.isGroup) {
+                        neededHeight = 1.6 + item.options.length * 0.4;
+                    }
+                    if (y + neededHeight > 11) {
+                        slide = createNewSlide();
+                        addHeaderToSlide(slide);
+                        y = 1.5;
+                    }
 
-          const isEven = index % 2 === 0;
-          const textX = isEven ? 2.75 : 0.5;
-          const imageX = isEven ? 0.5 : 5.75;
+                    const isEven = index % 2 === 0;
+                    const textX = isEven ? 2.75 : 0.5;
+                    const imageX = isEven ? 0.5 : 5.75;
 
-          slide.addShape(pptx.shapes.RECTANGLE, {
-            x: textX,
-            y: y,
-            w: 0.8,
-            h: 0.3,
-            fill: { color: fontColor },
-            rectRadius: 0.1,
-          });
-          slide.addText(item.Code, {
-            x: textX,
-            y: y,
-            w: 0.8,
-            h: 0.3,
-            align: "center",
-            color: bkgdColor,
-            fontSize: 10,
-            bold: true,
-          });
+                    slide.addShape(pptx.shapes.RECTANGLE, {
+                        x: textX,
+                        y: y,
+                        w: 0.8,
+                        h: 0.3,
+                        fill: { color: fontColor },
+                        rectRadius: 0.1,
+                    });
+                    slide.addText(item.Code, {
+                        x: textX,
+                        y: y,
+                        w: 0.8,
+                        h: 0.3,
+                        align: "center",
+                        color: bkgdColor,
+                        fontSize: 10,
+                        bold: true,
+                    });
 
-          if (item.isGroup) {
-            slide.addText(item.baseName, {
-              x: textX + 0.9,
-              y: y,
-              w: 4.1,
-              h: 0.3,
-              fontSize: 12,
-              bold: true,
-              color: fontColor,
-              fontFace: "Noto Sans",
-            });
-            slide.addText(item.baseJpName, {
-              x: textX,
-              y: y + 0.4,
-              w: 5.0,
-              h: 0.3,
-              fontSize: 11,
-              color: fontColor,
-              fontFace: "Noto Sans JP",
-            });
+                    if (item.isGroup) {
+                        slide.addText(item.baseName, {
+                            x: textX + 0.9,
+                            y: y,
+                            w: 4.1,
+                            h: 0.3,
+                            fontSize: 12,
+                            bold: true,
+                            color: fontColor,
+                            fontFace: "Noto Sans",
+                        });
+                        slide.addText(item.baseJpName, {
+                            x: textX,
+                            y: y + 0.4,
+                            w: 5.0,
+                            h: 0.3,
+                            fontSize: 11,
+                            color: fontColor,
+                            fontFace: "Noto Sans JP",
+                        });
             slide.addText(item.baseMmName, {
               x: textX,
               y: y + 0.7,
@@ -330,8 +331,8 @@ export async function exportToPpt(options) {
               fontFace: "Noto Sans SC",
             });
 
-            let optionY = y + 1.4;
-            item.options.forEach((opt) => {
+                        let optionY = y + 1.4;
+                        item.options.forEach((opt) => {
               const opt_en = opt.Name.match(/\[(.*?)\]/)?.[1];
               const optionName = opt_en
                 ? [
@@ -361,9 +362,9 @@ export async function exportToPpt(options) {
                 color: fontColor,
               });
               optionY += 0.4;
-            });
+                        });
 
-            if (item.image && appState.images[item.image]) {
+                        if (item.image && appState.images[item.image]) {
               const imageDataUrl = await blobToBase64(
                 appState.images[item.image]
               );
@@ -375,57 +376,58 @@ export async function exportToPpt(options) {
                 h: 2.0,
                 rounding: true, // Rounded corners (PptxGenJS v3.10.0+)
               });
-            }
-          } else {
-            slide.addText(item.Name, {
-              x: textX + 0.9,
-              y: y,
-              w: 4.1,
-              h: 0.3,
-              fontSize: 12,
-              bold: true,
-              color: fontColor,
-              fontFace: "Noto Sans",
-            });
-            slide.addText(item.JP_Name, {
-              x: textX,
-              y: y + 0.4,
-              w: 5.0,
-              h: 0.3,
-              fontSize: 11,
-              color: fontColor,
-              fontFace: "Noto Sans JP",
-            });
-            slide.addText(item.MM_Name, {
-              x: textX,
-              y: y + 0.7,
-              w: 5.0,
-              h: 0.3,
-              fontSize: 11,
-              color: fontColor,
-              fontFace: "Noto Sans Myanmar",
-            });
-            slide.addText(item.CN_Name, {
-              x: textX,
-              y: y + 1.0,
-              w: 5.0,
-              h: 0.3,
-              fontSize: 11,
-              color: fontColor,
-              fontFace: "Noto Sans SC",
-            });
-            slide.addText(`¥${item.Price_Included_Tax}`, {
-              x: textX,
-              y: y + 1.5,
-              w: 5.0,
-              h: 0.3,
-              fontSize: 14,
-              bold: true,
-              color: fontColor,
-              fontFace: "Noto Sans",
-            });
+                        }
+                    } else {
+                        // Single Item
+                        slide.addText(item.Name, {
+                            x: textX + 0.9,
+                            y: y,
+                            w: 4.1,
+                            h: 0.3,
+                            fontSize: 12,
+                            bold: true,
+                            color: fontColor,
+                            fontFace: "Noto Sans",
+                        });
+                        slide.addText(item.JP_Name, {
+                            x: textX,
+                            y: y + 0.4,
+                            w: 5.0,
+                            h: 0.3,
+                            fontSize: 11,
+                            color: fontColor,
+                            fontFace: "Noto Sans JP",
+                        });
+                        slide.addText(item.MM_Name, {
+                            x: textX,
+                            y: y + 0.7,
+                            w: 5.0,
+                            h: 0.3,
+                            fontSize: 11,
+                            color: fontColor,
+                            fontFace: "Noto Sans Myanmar",
+                        });
+                        slide.addText(item.CN_Name, {
+                            x: textX,
+                            y: y + 1.0,
+                            w: 5.0,
+                            h: 0.3,
+                            fontSize: 11,
+                            color: fontColor,
+                            fontFace: "Noto Sans SC",
+                        });
+                        slide.addText(`¥${item.Price_Included_Tax}`, {
+                            x: textX,
+                            y: y + 1.5,
+                            w: 5.0,
+                            h: 0.3,
+                            fontSize: 14,
+                            bold: true,
+                            color: fontColor,
+                            fontFace: "Noto Sans",
+                        });
 
-            if (item.Image && appState.images[item.Image]) {
+                        if (item.Image && appState.images[item.Image]) {
               const imageDataUrl = await blobToBase64(
                 appState.images[item.Image]
               );
@@ -437,30 +439,30 @@ export async function exportToPpt(options) {
                   h: 2.0,
                   rounding: true
               });
-            }
-          }
+                        }
+                    }
 
-          const dividerY = y + neededHeight + 0.3;
-          slide.addShape(pptx.shapes.LINE, {
-            x: 0.5,
-            y: dividerY,
-            w: 7.27,
-            h: 0,
-            line: { color: fontColor, width: 0.5, dashType: "dash" },
-          });
-          y = dividerY + 0.2;
-        }
-      }
+                    const dividerY = y + neededHeight + 0.3;
+                    slide.addShape(pptx.shapes.LINE, {
+                        x: 0.5,
+                        y: dividerY,
+                        w: 7.27,
+                        h: 0,
+                        line: { color: fontColor, width: 0.5, dashType: "dash" },
+                    });
+                    y = dividerY + 0.2;
+                }
+            }
 
       pptx.writeFile({ fileName: "custom_menu.pptx" });
-      alert("Custom PPT generation complete!");
-    } catch (error) {
-      console.error("Error generating PPT:", error);
-      alert(
-        "An error occurred while generating the PPT. Please check the console for details."
-      );
-    } finally {
-      loadingOverlay.style.display = "none";
-    }
+            alert("Custom PPT generation complete!");
+        } catch (error) {
+            console.error("Error generating PPT:", error);
+            alert(
+                "An error occurred while generating the PPT. Please check the console for details."
+            );
+        } finally {
+            loadingOverlay.style.display = "none";
+        }
   }, 10);
 }

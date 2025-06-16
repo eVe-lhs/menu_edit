@@ -2,18 +2,18 @@ import { appState } from "./core.js";
 
 // --- Font Imports ---
 // The path from /js/pdf-export.js to /js/fonts/ is './fonts/'
-import "./fonts/NotoSans-Regular-normal.js";
-import "./fonts/NotoSans-bold.js";
-import "./fonts/NotoSansJP-normal.js";
-import "./fonts/NotoSansMyanmar-normal.js";
-import "./fonts/NotoSansSC-normal.js";
-import "./fonts/Padauk-normal.js";
-import "./fonts/Pyidaungsu_Regular-normal.js";
-import "./fonts/MyanmarSansPro-normal.js";
-import "./fonts/Zawgyi-One-normal.js";
-import "./fonts/mm3-multi-os-normal.js";
-import "./fonts/mmrtext-normal.js"; // Ensure this is the correct path to your font file
-// Add any other font files you have here, e.g., mmrtext-normal.js
+// import "./fonts/NotoSans-Regular-normal.js";
+// import "./fonts/NotoSans-bold.js";
+// import "./fonts/NotoSansJP-normal.js";
+// import "./fonts/NotoSansMyanmar-normal.js";
+// import "./fonts/NotoSansSC-normal.js";
+// import "./fonts/Padauk-normal.js";
+// import "./fonts/Pyidaungsu_Regular-normal.js";
+// import "./fonts/MyanmarSansPro-normal.js";
+// import "./fonts/Zawgyi-One-normal.js";
+// import "./fonts/mm3-multi-os-normal.js";
+// import "./fonts/mmrtext-normal.js"; // Ensure this is the correct path to your font file
+// // Add any other font files you have here, e.g., mmrtext-normal.js
 
 // Helper function to convert blob to base64
 function blobToBase64(blob) {
