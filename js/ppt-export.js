@@ -347,19 +347,20 @@ export async function exportToPpt(options) {
               slide.addText(optionName, {
                 x: textX,
                 y: optionY,
-                w: 3.5,
+                w: 3,
                 h: 0.3,
                 fontSize: 10,
                 color: fontColor,
               });
-              slide.addText(`¥${opt.Price_Included_Tax}`, {
-                x: textX + 3.6,
+              slide.addText(`¥${opt.Price} (¥${opt.Price_Included_Tax} 税込)`, {
+                x: textX + 3.0, // Adjusted position
                 y: optionY,
-                w: 1.4,
+                w: 2.0, // Increased width for the new text
                 h: 0.3,
-                fontSize: 11,
+                fontSize: 10, // Font size adjusted to fit
                 bold: true,
                 color: fontColor,
+                align: "right", // Aligned to the right for a cleaner look
               });
               optionY += 0.4;
             });
@@ -420,7 +421,7 @@ export async function exportToPpt(options) {
               color: fontColor,
               fontFace: "Noto Sans SC",
             });
-            slide.addText(`¥${item.Price_Included_Tax}`, {
+            slide.addText(`¥${item.Price} (¥${item.Price_Included_Tax} 税込)`, {
               x: textX,
               y: y + 1.5,
               w: 5.0,
